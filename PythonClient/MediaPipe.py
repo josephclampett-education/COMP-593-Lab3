@@ -68,20 +68,14 @@ class MediaPipe:
                                                 image, depth_frame)
       if head3D is None:
         return None
-      Head_x, Head_y, Head_z = head3D
       rWrist3D =  self.point_to_3D(results.pose_landmarks.landmark[self.mp_holistic.PoseLandmark.RIGHT_WRIST],
                                                 image, depth_frame)
       if rWrist3D is None:
         return None
-      RHand_x, RHand_y, RHand_z = rWrist3D
 
       lWrist3D = self.point_to_3D(results.pose_landmarks.landmark[self.mp_holistic.PoseLandmark.LEFT_WRIST],
                                                 image, depth_frame)
       if lWrist3D is None:
         return None
-      LHand_x, LHand_y, LHand_z = lWrist3D
 
-      msg = {'LHand_x': -1*LHand_x, 'LHand_y': -1*LHand_y+1.5, 'LHand_z': -1*LHand_z,
-             'RHand_x': -1*RHand_x, 'RHand_y': -1*RHand_y+1.5, 'RHand_z': -1*RHand_z,
-             'Head_x': -1*Head_x, 'Head_y': -1*Head_y+1.5, 'Head_z': -1*Head_z,}
-      return msg
+      return [head3D, rWrist3D, lWrist3D]

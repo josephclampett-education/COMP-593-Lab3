@@ -11,7 +11,9 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using OpenCover.Framework.Model;
 using UnityEngine;
+using Newtonsoft.Json;
 
 public class TCP : MonoBehaviour
 {
@@ -44,10 +46,21 @@ public class TCP : MonoBehaviour
     private float timer = 0;
     private static object Lock = new object();
     private List<Message> MessageQue = new List<Message>();
-
-
+    
+    Matrix4x4 HomographyMatrix = Matrix4x4.identity;
+    Vector3 PostShift = Vector3.zero;
+    
     private void Start()
     {
+        string matrixFile = System.IO.File.ReadAllText("Assets/LAB/CalibrationMatrix.json");
+        float[,] floatArray = JsonConvert.DeserializeObject<float[,]>(matrixFile);
+        for (int i = 0; i < 4; i++)
+            for (int j = 0; j < 4; j++)
+                HomographyMatrix[i, j] = floatArray[i, j];
+        HomographyMatrix = HomographyMatrix.transpose;
+        string offsetFile = System.IO.File.ReadAllText("Assets/LAB/CalibrationPostShift.json");
+        PostShift = JsonUtility.FromJson<Vector3>(offsetFile);
+        
         thread = new Thread(new ThreadStart(SetupServer));
         thread.Start();
     }
@@ -139,9 +152,18 @@ public class TCP : MonoBehaviour
 
     public void Move(Message message)
     {
-        LHand.localPosition = new Vector3(message.LHand_x, message.LHand_y, message.LHand_z);
-        RHand.localPosition = new Vector3(message.RHand_x, message.RHand_y, message.RHand_z);
-        Head.localPosition = new Vector3(message.Head_x, message.Head_y, message.Head_z);
+        Vector3 LHandLocalPosition = new Vector3(message.LHand_x, message.LHand_y, message.LHand_z);
+        Vector3 RHandLocalPosition = new Vector3(message.RHand_x, message.RHand_y, message.RHand_z);
+        Vector3 HeadLocalPosition = new Vector3(message.Head_x, message.Head_y, message.Head_z);
+        
+        // LHandLocalPosition = HomographyMatrix.MultiplyPoint(LHandLocalPosition) + PostShift;
+        // RHandLocalPosition = HomographyMatrix.MultiplyPoint(RHandLocalPosition) + PostShift;
+        // HeadLocalPosition = HomographyMatrix.MultiplyPoint(HeadLocalPosition) + PostShift;
+        
+        LHand.localPosition = LHandLocalPosition;
+        RHand.localPosition = RHandLocalPosition;
+        Head.localPosition = HeadLocalPosition;
+        
         Debug.Log("Left Hand: " + LHand.position.ToString());
         Debug.Log("Right Hand: " + RHand.position.ToString());
         Debug.Log("Head: " + Head.position.ToString());
